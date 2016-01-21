@@ -26,13 +26,13 @@ def GRIP_2016_2(frame):
 	# CV Resize
 	step_0_0 = cv2.resize(frame, (320,240), interpolation=cv2.INTER_LINEAR)
 	
-	step_0_0 = cv2.cvtColor(step_0_0, cv2.COLOR_BGR2HLS)
+	step_0_1 = cv2.cvtColor(step_0_0, cv2.COLOR_BGR2HLS)
 	
 	# HSL Threshold 1
-	step_1_0 = cv2.inRange(step_0_0, np.array([85,144,44]), np.array([130,188,101]))
+	step_1_0 = cv2.inRange(step_0_1, np.array([85,144,44]), np.array([130,188,101]))
 	
 	# HSL Threshold 2
-	step_2_0 = cv2.inRange(step_0_0, np.array([63,55,168]), np.array([96,161,255]))
+	step_2_0 = cv2.inRange(step_0_1, np.array([63,55,168]), np.array([96,161,255]))
 	
 	# Bitwise Or
 	step_3_0 = cv2.bitwise_or(step_1_0, step_2_0)
