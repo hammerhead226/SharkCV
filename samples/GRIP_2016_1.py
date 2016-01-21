@@ -34,7 +34,7 @@ def GRIP_2016_1(frame):
 	contours, hierarchy = cv2.findContours(step_1_0, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
 	step_2_0 = []
 	for cnt in contours:
-		dict = {'area':0, 'width':0, 'centerX':0, 'centerY':0}
+		dict = {'area':0, 'width':0, 'height':0, 'centerX':0, 'centerY':0}
 		dict['area'] = cv2.contourArea(cnt)
 		if dict['area'] > 0:
 			x, y, dict['width'], dict['height'] = cv2.boundingRect(cnt)
@@ -51,9 +51,9 @@ def GRIP_2016_1(frame):
 		
 	# Publish ContoursReport
 	for idx, cnt in enumerate(step_3_0):
-		table = cr.getSubTable(idx)
-		table.putValue('area', area)
-		table.putValue('width', width)
-		table.putValue('height', height)
-		table.putValue('centerX', centerX)
-		table.putValue('centerY', centerY)
+		table = cr.getSubTable(str(idx))
+		table.putValue('area', dict['area'])
+		table.putValue('width', dict['width'])
+		table.putValue('height', dict['height'])
+		table.putValue('centerX', dict['centerX'])
+		table.putValue('centerY', dict['centerY'])
