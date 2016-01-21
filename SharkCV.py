@@ -11,7 +11,7 @@ import cv2
 # Start logging
 logging.basicConfig(
 	level=logging.INFO,
-	format='[%(asctime)s] [%(levelname).4s] [%(filename)s:%(lineno)d]   %(message)s',
+	format='[%(asctime)s] [%(levelname).4s] [%(filename)s:%(lineno)03d]   %(message)s',
 	datefmt='%H:%M:%S'
 )
 logging.debug('Starting %s', os.path.splitext(__file__)[0])
@@ -30,8 +30,17 @@ if modfile is None:
 			modfile = sys.argv[i]+'.py'
 			break
 
-# Look through current folder
+# Look through current folder and all subfolders
 if modfile is None:
+	for root, dirs, files in os.walk(os.path.dirname(os.path.realpath(__file__))):
+		for file in files:
+			file = os.path.join(root, file)
+			if file.endswith('.py') and not os.path.samefile(file, __file__):
+				modfile = file
+				break
+		if not modfile is None:
+			break
+
 	dir = os.path.dirname(os.path.realpath(__file__))
 	for file in os.listdir(dir):
 		if file.endswith('.py') and not os.path.samefile(file, __file__):
@@ -40,12 +49,18 @@ if modfile is None:
 
 # Import the Python file
 if not modfile is None:
-	logging.info('Found module file: %s', os.path.relpath(modfile))
-	modfile = os.path.splitext(modfile)[0]
-	logging.info('Loading module: %s', modfile)
+	logging.info('Found module: %s', os.path.relpath(modfile))
+	modfile = os.path.relpath(modfile)
+	logging.info('Importing module: %s', modfile)
+	# Add module's directory to Python's path
+	moddir = os.path.dirname(os.path.abspath(modfile))
+	if not moddir in sys.path:
+		sys.path.insert(0, moddir)
+	# Import the module's basename
+	modname = os.path.splitext(os.path.basename(modfile))[0]
 	try:
-		module = __import__(modfile)
-		module = getattr(module, modfile)
+		module = __import__(modname)
+		module = getattr(module, modname)
 	except Exception, e:
 		logging.error('Import failed: %s', str(e))
 		sys.exit(1)
