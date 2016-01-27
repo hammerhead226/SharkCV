@@ -7,6 +7,7 @@ import sys
 import time
 
 import cv2
+import numpy as np
 
 
 # Start logging
@@ -24,7 +25,9 @@ parser.add_argument('-i', metavar='file', dest='input_image', help='input image'
 parser.add_argument('-wi', metavar='N', dest='webcam_index', help='webcam index (default: -1)', type=int, default=-1)
 parser.add_argument('-ww', metavar='N', dest='webcam_width', help='webcam width', type=int)
 parser.add_argument('-wh', metavar='N', dest='webcam_height', help='webcam height', type=int)
-parser.add_argument('-wf', metavar='N', dest='webcam_fps', help='webcam fps', type=int)
+parser.add_argument('-wf', metavar='N', dest='webcam_fps', help='webcam fps (default: 30)', type=int, default=30)
+parser.add_argument('-oi', metavar='file', dest='output_image', help='output image')
+parser.add_argument('-ov', metavar='file', dest='output_video', help='output video')
 parser.add_argument('module', nargs='?', help='python module file')
 args = parser.parse_args()
 
@@ -94,6 +97,14 @@ while True:
 				cap.set(cv2.cv.CV_CAP_PROP_FPS, args.webcam_fps)
 			logging.info('Opened webcam @ %.fx%.f', cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
 
+	# Open output video file
+	out = None
+	if not args.output_video is None:
+		if not cap is None:
+			logging.debug('Opening output video: %s', args.output_video)
+			fourcc = cv2.cv.CV_FOURCC(*'DIVX')
+			out = cv2.VideoWriter(args.output_video, fourcc, args.webcam_fps, (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
+
 	# Set up FPS list and iterator
 	times = [0] * 25
 	time_idx = 0
@@ -123,13 +134,23 @@ while True:
 			logging.error('Failed to get a frame')
 			break
 
+		# Write to output video
+		if not out is None:
+			out.write(frame)
+
 
 		# Execute module file
+		modret = None
 		try:
-			module(frame)
+			modret = module(frame)
 		except Exception, e:
 			logging.error('Module exception: %s', str(e))
 			sys.exit(1)
+
+		# Handle module output
+		if type(modret) is np.ndarray and not args.output_image is None:
+			logging.debug('Writing image: %s', args.output_image)
+			cv2.imwrite(args.output_image, modret)
 
 
 		# Break loop if only one frame to process
@@ -146,6 +167,10 @@ while True:
 		if time_idx > 0 and time_idx % 5 == 0:
 			logging.debug('Average FPS: %.1f', 1/(sum(times)/len(times)))
 		start = end
+
+	# Release open output video
+	if not out is None:
+		out.release()
 
 	# Release open webcam
 	if not cap is None:

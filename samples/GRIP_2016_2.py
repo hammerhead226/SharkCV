@@ -68,3 +68,6 @@ def GRIP_2016_2(frame):
 		table.putValue('height', dict['height'])
 		table.putValue('centerX', dict['centerX'])
 		table.putValue('centerY', dict['centerY'])
+		
+	cv2.drawContours(step_0_0, contours, -1, (0,255,0), 2)
+	return step_0_0
