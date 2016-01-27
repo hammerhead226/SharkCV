@@ -24,6 +24,7 @@ parser.add_argument('-wi', metavar='N', dest='webcam_index', help='webcam index 
 parser.add_argument('-ww', metavar='N', dest='webcam_width', help='webcam width', type=int)
 parser.add_argument('-wh', metavar='N', dest='webcam_height', help='webcam height', type=int)
 parser.add_argument('-wf', metavar='N', dest='webcam_fps', help='webcam fps', type=int)
+parser.add_argument('module', nargs='?', help='python module file')
 args = parser.parse_args()
 
 
@@ -31,14 +32,11 @@ args = parser.parse_args()
 modfile = None
 
 # Look through command line arguments
-if modfile is None:
-	for i in range(1, len(sys.argv)):
-		if os.path.exists(sys.argv[i]):
-			modfile = sys.argv[i]
-			break
-		elif os.path.exists(sys.argv[i]+'.py'):
-			modfile = sys.argv[i]+'.py'
-			break
+if modfile is None and not args.module is None:
+	if os.path.exists(args.module):
+		modfile = args.module
+	elif os.path.exists(args.module+'.py'):
+		modfile = args.module+'.py'
 
 # Look through current folder and all subfolders
 if modfile is None:
