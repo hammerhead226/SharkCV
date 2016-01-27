@@ -20,6 +20,7 @@ logging.debug('Starting %s', os.path.splitext(__file__)[0])
 
 # Parse arguments
 parser = argparse.ArgumentParser(prog=__file__)
+parser.add_argument('-i', metavar='file', dest='input_image', help='input image')
 parser.add_argument('-wi', metavar='N', dest='webcam_index', help='webcam index (default: -1)', type=int, default=-1)
 parser.add_argument('-ww', metavar='N', dest='webcam_width', help='webcam width', type=int)
 parser.add_argument('-wh', metavar='N', dest='webcam_height', help='webcam height', type=int)
@@ -80,28 +81,48 @@ else:
 # Main image loop
 logging.debug('Opening webcam')
 while True:
-	# Open first available camera
-	cap = cv2.VideoCapture(args.webcam_index)
-	if cap.isOpened():
-		if not args.webcam_width is None:
-			cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, args.webcam_width)
-		if not args.webcam_height is None:
-			cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, args.webcam_height)
-		if not args.webcam_fps is None:
-			cap.set(cv2.cv.CV_CAP_PROP_FPS, args.webcam_fps)
-		logging.info('Opened webcam @ %.fx%.f', cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
+	# Open webcam and set options
+	cap = None
+	if args.input_image is None:
+		cap = cv2.VideoCapture(args.webcam_index)
+		if cap.isOpened():
+			if not args.webcam_width is None:
+				cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, args.webcam_width)
+			if not args.webcam_height is None:
+				cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, args.webcam_height)
+			if not args.webcam_fps is None:
+				cap.set(cv2.cv.CV_CAP_PROP_FPS, args.webcam_fps)
+			logging.info('Opened webcam @ %.fx%.f', cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
 
 	# Set up FPS list and iterator
 	times = [0] * 25
 	time_idx = 0
 	start = time.time()
 
-	# Read webcam frames while possible
-	while cap.isOpened():
-		ret, frame = cap.read()
-		if not ret:
-			logging.warning('Failed to read webcam frame')
+	# Continually process frames
+	while True:
+		# Get a frame to process
+		frame = None
+
+		# Read webcam frame
+		if args.input_image is None and not cap is None and cap.isOpened():
+			ret, frame = cap.read()
+			if not ret:
+				logging.warning('Failed to read webcam frame')
+				break
+
+		# Read input image
+		if not args.input_image is None:
+			if not os.path.exists(args.input_image):
+				logging.error('Input image does not exist: %s', args.input_image)
+				sys.exit(1)
+			logging.info('Reading image: %s', args.input_image)
+			frame = cv2.imread(args.input_image, cv2.IMREAD_COLOR)
+
+		if frame is None:
+			logging.error('Failed to get a frame')
 			break
+
 
 		# Execute module file
 		try:
@@ -109,6 +130,11 @@ while True:
 		except Exception, e:
 			logging.error('Module exception: %s', str(e))
 			sys.exit(1)
+
+
+		# Break loop if only one frame to process
+		if not args.input_image is None:
+			break
 
 		# Compute FPS information
 		end = time.time()
@@ -121,5 +147,12 @@ while True:
 			logging.debug('Average FPS: %.1f', 1/(sum(times)/len(times)))
 		start = end
 
-	cap.release()
+	# Release open webcam
+	if not cap is None:
+		cap.release()
+
+	# Break loop if using input image
+	if not args.input_image is None:
+		break
+
 	time.sleep(0.05)
