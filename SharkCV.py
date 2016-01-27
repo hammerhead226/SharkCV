@@ -145,10 +145,6 @@ while True:
 			logging.error('Failed to get a frame')
 			break
 
-		# Write to output video
-		if not out is None:
-			out.write(frame)
-
 
 		# Execute module file
 		modret = None
@@ -158,10 +154,21 @@ while True:
 			logging.error('Module exception: %s', str(e))
 			sys.exit(1)
 
-		# Handle module output
-		if type(modret) is np.ndarray and not args.output_image is None:
+		# Write to output image
+		if not args.output_image is None:
 			logging.debug('Writing image: %s', args.output_image)
-			cv2.imwrite(args.output_image, modret)
+			if type(modret) is np.ndarray:
+				cv2.imwrite(args.output_image, modret)
+			elif type(args.input_video) is int:
+				cv2.imwrite(args.output_image, frame)
+
+		# Write to output video
+		if not out is None:
+			# Write to output video
+			if type(modret) is np.ndarray:
+				out.write(modret)
+			elif type(args.input_video) is int:
+				out.write(frame)
 
 
 		# Break loop if only one frame to process
