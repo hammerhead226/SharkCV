@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import logging
 import os
 import sys
@@ -15,6 +16,15 @@ logging.basicConfig(
 	datefmt='%H:%M:%S'
 )
 logging.debug('Starting %s', os.path.splitext(__file__)[0])
+
+
+# Parse arguments
+parser = argparse.ArgumentParser(prog=__file__)
+parser.add_argument('-wi', metavar='N', dest='webcam_index', help='webcam index (default: -1)', type=int, default=-1)
+parser.add_argument('-ww', metavar='N', dest='webcam_width', help='webcam width', type=int)
+parser.add_argument('-wh', metavar='N', dest='webcam_height', help='webcam height', type=int)
+parser.add_argument('-wf', metavar='N', dest='webcam_fps', help='webcam fps', type=int)
+args = parser.parse_args()
 
 
 # Dynamic import a Python algorithm file
@@ -73,8 +83,14 @@ else:
 logging.debug('Opening webcam')
 while True:
 	# Open first available camera
-	cap = cv2.VideoCapture(-1)
+	cap = cv2.VideoCapture(args.webcam_index)
 	if cap.isOpened():
+		if not args.webcam_width is None:
+			cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, args.webcam_width)
+		if not args.webcam_height is None:
+			cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, args.webcam_height)
+		if not args.webcam_fps is None:
+			cap.set(cv2.cv.CV_CAP_PROP_FPS, args.webcam_fps)
 		logging.info('Opened webcam @ %.fx%.f', cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
 
 	# Set up FPS list and iterator
