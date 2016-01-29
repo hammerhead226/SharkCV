@@ -26,6 +26,12 @@ parser.add_argument('-iv', metavar='N', dest='input_video', help='input video/we
 parser.add_argument('-vw', metavar='N', dest='video_width', help='video width', type=int)
 parser.add_argument('-vh', metavar='N', dest='video_height', help='video height', type=int)
 parser.add_argument('-vf', metavar='N', dest='video_fps', help='video fps (webcam default: 30.0)', type=float, default=30.0)
+parser.add_argument('-wb', metavar='[0-255]', dest='webcam_brightness', help='webcam brightness', type=float)
+parser.add_argument('-wc', metavar='[0-255]', dest='webcam_contrast', help='webcam contrast', type=float)
+parser.add_argument('-we', metavar='[0-255]', dest='webcam_exposure', help='webcam exposure', type=float)
+parser.add_argument('-wg', metavar='[0-255]', dest='webcam_gain', help='webcam gain', type=float)
+parser.add_argument('-wh', metavar='[0-255]', dest='webcam_hue', help='webcam hue', type=float)
+parser.add_argument('-ws', metavar='[0-255]', dest='webcam_saturation', help='webcam saturation', type=float)
 parser.add_argument('-oi', metavar='file', dest='output_image', help='output image')
 parser.add_argument('-ov', metavar='file', dest='output_video', help='output video')
 parser.add_argument('module', nargs='?', help='python module file')
@@ -104,6 +110,21 @@ while True:
 				cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, args.video_height)
 			if not args.video_fps is None:
 				cap.set(cv2.cv.CV_CAP_PROP_FPS, args.video_fps)
+
+			# Set webcam options
+			if type(args.input_video) is int:
+				if not args.webcam_brightness is None:
+					cap.set(cv2.cv.CV_CAP_PROP_BRIGHTNESS, args.webcam_brightness/255.0)
+				if not args.webcam_contrast is None:
+					cap.set(cv2.cv.CV_CAP_PROP_CONTRAST, args.webcam_contrast/255.0)
+				if not args.webcam_exposure is None:
+					cap.set(cv2.cv.CV_CAP_PROP_EXPOSURE, args.webcam_exposure/255.0)
+				if not args.webcam_gain is None:
+					cap.set(cv2.cv.CV_CAP_PROP_GAIN, args.webcam_gain/255.0)
+				if not args.webcam_hue is None:
+					cap.set(cv2.cv.CV_CAP_PROP_HUE, args.webcam_hue/255.0)
+				if not args.webcam_saturation is None:
+					cap.set(cv2.cv.CV_CAP_PROP_SATURATION, args.webcam_saturation/255.0)
 
 			logging.info('Opened video: %.fx%.f @ %.1f FPS', cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT), args.video_fps)
 
