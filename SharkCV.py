@@ -10,15 +10,6 @@ import cv2
 import numpy as np
 
 
-# Start logging
-logging.basicConfig(
-	level=logging.INFO,
-	format='[%(asctime)s] [%(levelname).4s] [%(filename)s:%(lineno)03d]   %(message)s',
-	datefmt='%H:%M:%S'
-)
-logging.debug('Starting %s', os.path.splitext(__file__)[0])
-
-
 # Parse arguments
 parser = argparse.ArgumentParser(prog=__file__)
 group_input = parser.add_argument_group('input source')
@@ -39,12 +30,22 @@ group_webcam.add_argument('-we', metavar='[0-255]', dest='webcam_exposure', help
 group_webcam.add_argument('-wg', metavar='[0-255]', dest='webcam_gain', help='webcam gain', type=float)
 group_webcam.add_argument('-wh', metavar='[0-255]', dest='webcam_hue', help='webcam hue', type=float)
 group_webcam.add_argument('-ws', metavar='[0-255]', dest='webcam_saturation', help='webcam saturation', type=float)
+parser.add_argument('-v', dest='verbose_debug', help='logging level DEBUG', action='store_true', default=False)
 parser.add_argument('module', nargs='?', help='python module file')
 args = parser.parse_args()
 
 # Massage arguments
 if str(args.input_video).lstrip('-').isdigit():
 	args.input_video = int(args.input_video)
+
+
+# Start logging
+logging.basicConfig(
+	level=(logging.DEBUG if args.verbose_debug else logging.INFO),
+	format='[%(asctime)s] [%(levelname).4s] [%(filename)s:%(lineno)03d]   %(message)s',
+	datefmt='%H:%M:%S'
+)
+logging.debug('Starting %s', os.path.splitext(__file__)[0])
 
 
 # Dynamic import a Python algorithm file
@@ -76,7 +77,7 @@ if modfile is None:
 
 # Import the Python file
 if not modfile is None:
-	logging.info('Found module: %s', os.path.relpath(modfile))
+	logging.debug('Found module: %s', os.path.relpath(modfile))
 	modfile = os.path.relpath(modfile)
 	logging.info('Importing module: %s', modfile)
 	# Add module's directory to Python's path
@@ -92,7 +93,7 @@ if not modfile is None:
 		logging.error('Import failed: %s', str(e))
 		sys.exit(1)
 else:
-	logging.info('No module to load')
+	logging.error('No module to load')
 	sys.exit(1)
 
 
@@ -156,7 +157,7 @@ while True:
 			if not os.path.exists(args.input_image):
 				logging.error('Input image does not exist: %s', args.input_image)
 				sys.exit(1)
-			logging.info('Reading image: %s', args.input_image)
+			logging.debug('Reading image: %s', args.input_image)
 			frame = cv2.imread(args.input_image, cv2.IMREAD_COLOR)
 
 		# Read input video
@@ -168,7 +169,7 @@ while True:
 				break
 
 		if frame is None:
-			logging.error('Failed to get a frame')
+			logging.warning('Failed to get a frame')
 			break
 
 
