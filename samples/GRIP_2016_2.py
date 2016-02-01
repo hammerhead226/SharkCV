@@ -63,11 +63,11 @@ def GRIP_2016_2(frame):
 	# Publish ContoursReport
 	for idx, cnt in enumerate(step_6_0):
 		table = cr.getSubTable(str(idx))
-		table.putValue('area', dict['area'])
-		table.putValue('width', dict['width'])
-		table.putValue('height', dict['height'])
-		table.putValue('centerX', dict['centerX'])
-		table.putValue('centerY', dict['centerY'])
+		table.putValue('area', cnt['area'])
+		table.putValue('width', cnt['width'])
+		table.putValue('height', cnt['height'])
+		table.putValue('centerX', cnt['centerX'])
+		table.putValue('centerY', cnt['centerY'])
 
 	cv2.drawContours(step_0_0, contours, -1, (0,255,0), 2)
 	return step_0_0
