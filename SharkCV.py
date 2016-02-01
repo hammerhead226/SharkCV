@@ -66,7 +66,7 @@ if modfile is None:
 			if file.endswith('.py') and not os.path.samefile(file, __file__):
 				modfile = file
 				break
-		if not modfile is None:
+		if modfile is not None:
 			break
 
 	dir = os.path.dirname(os.path.realpath(__file__))
@@ -76,13 +76,13 @@ if modfile is None:
 			break
 
 # Import the Python file
-if not modfile is None:
+if modfile is not None:
 	logging.debug('Found module: %s', os.path.relpath(modfile))
 	modfile = os.path.relpath(modfile)
 	logging.info('Importing module: %s', modfile)
 	# Add module's directory to Python's path
 	moddir = os.path.dirname(os.path.abspath(modfile))
-	if not moddir in sys.path:
+	if moddir not in sys.path:
 		sys.path.insert(0, moddir)
 	# Import the module's basename
 	modname = os.path.splitext(os.path.basename(modfile))[0]
@@ -106,38 +106,38 @@ while True:
 		cap = cv2.VideoCapture(args.input_video)
 		if cap.isOpened():
 			# Get FPS from video file
-			if not type(args.input_video) is int:
+			if type(args.input_video) is not int:
 				args.video_fps = cap.get(cv2.cv.CV_CAP_PROP_FPS)
 
 			# Set video options
-			if not args.video_width is None:
+			if args.video_width is not None:
 				cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, args.video_width)
-			if not args.video_height is None:
+			if args.video_height is not None:
 				cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, args.video_height)
-			if not args.video_fps is None:
+			if args.video_fps is not None:
 				cap.set(cv2.cv.CV_CAP_PROP_FPS, args.video_fps)
 
 			# Set webcam options
 			if type(args.input_video) is int:
-				if not args.webcam_brightness is None:
+				if args.webcam_brightness is not None:
 					cap.set(cv2.cv.CV_CAP_PROP_BRIGHTNESS, args.webcam_brightness/255.0)
-				if not args.webcam_contrast is None:
+				if args.webcam_contrast is not None:
 					cap.set(cv2.cv.CV_CAP_PROP_CONTRAST, args.webcam_contrast/255.0)
-				if not args.webcam_exposure is None:
+				if args.webcam_exposure is not None:
 					cap.set(cv2.cv.CV_CAP_PROP_EXPOSURE, args.webcam_exposure/255.0)
-				if not args.webcam_gain is None:
+				if args.webcam_gain is not None:
 					cap.set(cv2.cv.CV_CAP_PROP_GAIN, args.webcam_gain/255.0)
-				if not args.webcam_hue is None:
+				if args.webcam_hue is not None:
 					cap.set(cv2.cv.CV_CAP_PROP_HUE, args.webcam_hue/255.0)
-				if not args.webcam_saturation is None:
+				if args.webcam_saturation is not None:
 					cap.set(cv2.cv.CV_CAP_PROP_SATURATION, args.webcam_saturation/255.0)
 
 			logging.info('Opened video: %.fx%.f @ %.1f FPS', cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT), args.video_fps)
 
 	# Open output video file
 	out = None
-	if not args.output_video is None:
-		if not cap is None:
+	if args.output_video is not None:
+		if cap is not None:
 			logging.debug('Opening output video: %s', args.output_video)
 			fourcc = cv2.cv.CV_FOURCC(*'DIVX')
 			out = cv2.VideoWriter(args.output_video, fourcc, args.video_fps, (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
@@ -153,7 +153,7 @@ while True:
 		frame = None
 
 		# Read input image
-		if not args.input_image is None:
+		if args.input_image is not None:
 			if not os.path.exists(args.input_image):
 				logging.error('Input image does not exist: %s', args.input_image)
 				sys.exit(1)
@@ -161,7 +161,7 @@ while True:
 			frame = cv2.imread(args.input_image, cv2.IMREAD_COLOR)
 
 		# Read input video
-		if not cap is None and cap.isOpened():
+		if cap is not None and cap.isOpened():
 			ret, frame = cap.read()
 			if not ret:
 				if type(args.input_video) is int:
@@ -182,7 +182,7 @@ while True:
 			sys.exit(1)
 
 		# Write to output image
-		if not args.output_image is None:
+		if args.output_image is not None:
 			logging.debug('Writing image: %s', args.output_image)
 			if type(modret) is np.ndarray:
 				cv2.imwrite(args.output_image, modret)
@@ -190,7 +190,7 @@ while True:
 				cv2.imwrite(args.output_image, frame)
 
 		# Write to output video
-		if not out is None:
+		if out is not None:
 			# Write to output video
 			if type(modret) is np.ndarray:
 				out.write(modret)
@@ -199,7 +199,7 @@ while True:
 
 
 		# Break loop if only one frame to process
-		if not args.input_image is None:
+		if args.input_image is not None:
 			break
 
 		# Compute FPS information
@@ -214,15 +214,15 @@ while True:
 		start = end
 
 	# Release open output video
-	if not out is None:
+	if out is not None:
 		out.release()
 
 	# Release open input video
-	if not cap is None:
+	if cap is not None:
 		cap.release()
 
 	# Break loop if using input image/video
-	if not args.input_image is None or not type(args.input_video) is int:
+	if args.input_image is not None or not type(args.input_video) is int:
 		break
 
 	time.sleep(0.05)
