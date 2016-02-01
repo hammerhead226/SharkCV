@@ -140,7 +140,7 @@ while True:
 		if cap is not None:
 			logging.debug('Opening output video: %s', args.output_video)
 			fourcc = cv2.cv.CV_FOURCC(*'DIVX')
-			out = cv2.VideoWriter(args.output_video, fourcc, args.video_fps, (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
+			out = cv2.VideoWriter(time.strftime(args.output_video), fourcc, args.video_fps, (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
 
 	# Set up FPS list and iterator
 	times = [0] * 25
@@ -185,9 +185,9 @@ while True:
 		if args.output_image is not None:
 			logging.debug('Writing image: %s', args.output_image)
 			if type(modret) is np.ndarray:
-				cv2.imwrite(args.output_image, modret)
+				cv2.imwrite(time.strftime(args.output_image), modret)
 			elif type(args.input_video) is int:
-				cv2.imwrite(args.output_image, frame)
+				cv2.imwrite(time.strftime(args.output_image), frame)
 
 		# Write to output video
 		if out is not None:
