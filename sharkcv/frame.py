@@ -10,6 +10,7 @@ class Frame(object):
 		self._color = 'BGR'
 		if 'color' in kwargs:
 			self._color = kwargs['color']
+		self._contours = None
 
 	@property
 	def width(self):
@@ -60,32 +61,35 @@ class Frame(object):
 		# Resize only if different
 		if width != self.width or height != self.height:
 			self._ndarray = cv2.resize(self._ndarray, (width,height), interpolation=cv2.INTER_LINEAR)
+			self._contours = None
 
 	# Build an array of contours
+	@property
 	def contours(self):
-		self._contours = []
-		try:
-			contours, hierarchy = cv2.findContours(self._ndarray, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-			for contour in contours:
-				self._contours.append(sharkcv.Contour(contour))
-		except:
-			return False
-		return True
+		if self._contours is None:
+			self._contours = []
+			try:
+				contours, hierarchy = cv2.findContours(self._ndarray, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+				for contour in contours:
+					self._contours.append(sharkcv.Contour(contour))
+			except:
+				pass
+		return self._contours
 
 	# Filter contours by any sharkcv.Contour property
 	def contoursFilter(self, **kwargs):
 		for prop in kwargs.keys():
 			range = kwargs[prop]
 			i = 0
-			while i < len(self._contours):
-				value = getattr(self._contours[i], prop)
+			while i < len(self.contours):
+				value = getattr(self.contours[i], prop)
 				if range[0] is not None and range[0] >= 0:
 					if value < range[0]:
-						del self._contours[i]
+						del self.contours[i]
 						continue
 				if range[1] is not None and range[1] >= 0:
 					if value > range[1]:
-						del self._contours[i]
+						del self.contours[i]
 						continue
 				i += 1
 
@@ -95,7 +99,7 @@ class Frame(object):
 			kwargs['color'] = (0,255,0)
 		if 'width' not in kwargs:
 			kwargs['width'] = 2
-		contours = [cnt._ndarray for cnt in self._contours]
+		contours = [cnt._ndarray for cnt in self.contours]
 		if len(contours) > 0:
 			cv2.drawContours(frame._ndarray, contours, -1, kwargs['color'], kwargs['width'])
 			return True

@@ -45,8 +45,8 @@ class Contour(object):
 
 	@property
 	def centerX(self):
-		return self._x + self._width / 2.0
+		return self.x + self.width / 2.0
 
 	@property
 	def centerY(self):
-		return self._y + self._height / 2.0
+		return self.y + self.height / 2.0
