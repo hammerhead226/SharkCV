@@ -63,6 +63,28 @@ class Frame(object):
 			self._ndarray = cv2.resize(self._ndarray, (width,height), interpolation=cv2.INTER_LINEAR)
 			self._contours = None
 
+	# Dilate this mask's white region
+	def dilate(self, **kwargs):
+		if 'kernel_shape' not in kwargs:
+			kwargs['kernel_shape'] = cv2.MORPH_ELLIPSE
+		if 'kernel_size' not in kwargs:
+			kwargs['kernel_size'] = 3
+		if 'iterations' not in kwargs:
+			kwargs['iterations'] = 1
+		kernel = cv2.getStructuringElement(kwargs['kernel_shape'], (kwargs['kernel_size'],kwargs['kernel_size']))
+		self._ndarray = cv2.dilate(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
+
+	# Erode this mask's white region
+	def erode(self, **kwargs):
+		if 'kernel_shape' not in kwargs:
+			kwargs['kernel_shape'] = cv2.MORPH_ELLIPSE
+		if 'kernel_size' not in kwargs:
+			kwargs['kernel_size'] = 3
+		if 'iterations' not in kwargs:
+			kwargs['iterations'] = 1
+		kernel = cv2.getStructuringElement(kwargs['kernel_shape'], (kwargs['kernel_size'],kwargs['kernel_size']))
+		self._ndarray = cv2.erode(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
+
 	# Build an array of contours
 	@property
 	def contours(self):
