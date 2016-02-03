@@ -9,6 +9,8 @@ import time
 import cv2
 import numpy as np
 
+import sharkcv
+
 
 # Parse arguments
 parser = argparse.ArgumentParser(prog=__file__)
@@ -158,7 +160,7 @@ while True:
 				logging.error('Input image does not exist: %s', args.input_image)
 				sys.exit(1)
 			logging.debug('Reading image: %s', args.input_image)
-			frame = cv2.imread(args.input_image, cv2.IMREAD_COLOR)
+			frame = sharkcv.Frame(cv2.imread(args.input_image, cv2.IMREAD_COLOR))
 
 		# Read input video
 		if cap is not None and cap.isOpened():
@@ -167,6 +169,7 @@ while True:
 				if type(args.input_video) is int:
 					logging.warning('Failed to read webcam frame')
 				break
+			frame = sharkcv.Frame(frame)
 
 		if frame is None:
 			logging.warning('Failed to get a frame')
@@ -184,18 +187,18 @@ while True:
 		# Write to output image
 		if args.output_image is not None:
 			logging.debug('Writing image: %s', args.output_image)
-			if type(modret) is np.ndarray:
-				cv2.imwrite(time.strftime(args.output_image), modret)
-			elif type(args.input_video) is int:
-				cv2.imwrite(time.strftime(args.output_image), frame)
+			if type(modret) is sharkcv.Frame:
+				modret.writeImage(time.strftime(args.output_image))
+			elif type(frame) is sharkcv.Frame and type(args.input_video) is int:
+				frame.writeImage(time.strftime(args.output_image))
 
 		# Write to output video
 		if out is not None:
 			# Write to output video
-			if type(modret) is np.ndarray:
-				out.write(modret)
-			elif type(args.input_video) is int:
-				out.write(frame)
+			if type(modret) is sharkcv.Frame:
+				modret.writeVideo(out)
+			elif type(frame) is sharkcv.Frame and type(args.input_video) is int:
+				frame.writeVideo(out)
 
 
 		# Break loop if only one frame to process
