@@ -49,7 +49,7 @@ class Frame(object):
 		return self.__color('RGBA')
 
 	# Return a mask frame of threshold-ed pixels
-	def colorThreshold(self, lower, upper):
+	def threshold(self, lower, upper):
 		return sharkcv.Frame(cv2.inRange(self._ndarray, np.array(lower), np.array(upper)))
 
 	# Resize this frame
@@ -63,27 +63,25 @@ class Frame(object):
 			self._ndarray = cv2.resize(self._ndarray, (width,height), interpolation=cv2.INTER_LINEAR)
 			self._contours = None
 
-	# Dilate this mask's white region
-	def dilate(self, **kwargs):
-		if 'kernel_shape' not in kwargs:
-			kwargs['kernel_shape'] = cv2.MORPH_ELLIPSE
-		if 'kernel_size' not in kwargs:
-			kwargs['kernel_size'] = 3
-		if 'iterations' not in kwargs:
-			kwargs['iterations'] = 1
-		kernel = cv2.getStructuringElement(kwargs['kernel_shape'], (kwargs['kernel_size'],kwargs['kernel_size']))
-		self._ndarray = cv2.dilate(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
+	# Blur this frame with a box filter
+	def blur(self, size):
+		self._ndarray = cv2.blur(self._ndarray, (size,size))
 
-	# Erode this mask's white region
-	def erode(self, **kwargs):
-		if 'kernel_shape' not in kwargs:
-			kwargs['kernel_shape'] = cv2.MORPH_ELLIPSE
-		if 'kernel_size' not in kwargs:
-			kwargs['kernel_size'] = 3
-		if 'iterations' not in kwargs:
-			kwargs['iterations'] = 1
-		kernel = cv2.getStructuringElement(kwargs['kernel_shape'], (kwargs['kernel_size'],kwargs['kernel_size']))
-		self._ndarray = cv2.erode(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
+	# Blur this frame with a Gaussian kernel
+	def blurGaussian(self, size):
+		self._ndarray = cv2.GaussianBlur(self._ndarray, (size,size), 0)
+
+	# Blur this frame with a median filter
+	def blurMedian(self, size):
+		self._ndarray = cv2.medianBlur(self._ndarray, size)
+
+	# Write this frame to an image
+	def writeImage(self, filename):
+		cv2.imwrite(filename, self._ndarray)
+
+	# Write this frame to a video (VideoWriter)
+	def writeVideo(self, video_writer):
+		video_writer.write(self._ndarray)
 
 	# Build an array of contours
 	@property
@@ -127,10 +125,42 @@ class Frame(object):
 			return True
 		return False
 
-	# Write this frame to an image
-	def writeImage(self, filename):
-		cv2.imwrite(filename, self._ndarray)
-	
-	# Write this frame to a video (VideoWriter)
-	def writeVideo(self, video_writer):
-		video_writer.write(self._ndarray)
+	# Dilate this mask's white region
+	def dilate(self, **kwargs):
+		if 'shape' not in kwargs:
+			kwargs['shape'] = cv2.MORPH_ELLIPSE
+		if 'size' not in kwargs:
+			kwargs['size'] = 3
+		if 'iterations' not in kwargs:
+			kwargs['iterations'] = 1
+		kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
+		self._ndarray = cv2.dilate(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
+
+	# Erode this mask's white region
+	def erode(self, **kwargs):
+		if 'shape' not in kwargs:
+			kwargs['shape'] = cv2.MORPH_ELLIPSE
+		if 'size' not in kwargs:
+			kwargs['size'] = 3
+		if 'iterations' not in kwargs:
+			kwargs['iterations'] = 1
+		kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
+		self._ndarray = cv2.erode(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
+
+	# Erode/dilate this mask's white area
+	def open(self, **kwargs):
+		if 'shape' not in kwargs:
+			kwargs['shape'] = cv2.MORPH_ELLIPSE
+		if 'size' not in kwargs:
+			kwargs['size'] = 3
+		kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
+		self._ndarray = cv2.morphologyEx(self._ndarray, cv2.MORPH_OPEN, kernel)
+
+	# Dilate/erode this mask's white area
+	def close(self, **kwargs):
+		if 'shape' not in kwargs:
+			kwargs['shape'] = cv2.MORPH_ELLIPSE
+		if 'size' not in kwargs:
+			kwargs['size'] = 3
+		kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
+		self._ndarray = cv2.morphologyEx(self._ndarray, cv2.MORPH_CLOSE, kernel)
