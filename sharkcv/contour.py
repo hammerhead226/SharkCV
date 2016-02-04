@@ -9,9 +9,18 @@ class Contour(object):
 		self._width = None
 		self._height = None
 		self._area = None
+		self._angle = None
+		self._radius = None
 
 	def __boundingRect(self):
 		self._x, self._y, self._width, self._height = cv2.boundingRect(self._ndarray)
+
+	def __line(self):
+		[vx, vy, _, _] = cv2.fitLine(self._ndarray, cv2.cv.CV_DIST_L2, 0, 0.01, 0.01)
+		self._angle = np.arctan2(vy, vx)[0] * 180 / np.pi
+
+	def __circle(self):
+		(_, _), self._radius = cv2.minEnclosingCircle(self._ndarray)
 
 	@property
 	def x(self):
@@ -50,3 +59,15 @@ class Contour(object):
 	@property
 	def centerY(self):
 		return self.y + self.height / 2.0
+
+	@property
+	def angle(self):
+		if self._angle is None:
+			self.__line()
+		return self._angle
+
+	@property
+	def radius(self):
+		if self._radius is None:
+			self.__circle()
+		return self._radius
