@@ -14,12 +14,10 @@ class Frame(object):
 
 	@property
 	def width(self):
-		_, width, _ = self._ndarray.shape
-		return width
+		return self._ndarray.shape[1]
 	@property
 	def height(self):
-		height, _, _ = self._ndarray.shape
-		return height
+		return self._ndarray.shape[0]
 
 	# Change the colorspace of this frame
 	# http://docs.opencv.org/java/2.4.7/org/opencv/imgproc/Imgproc.html
@@ -62,6 +60,16 @@ class Frame(object):
 		if width != self.width or height != self.height:
 			self._ndarray = cv2.resize(self._ndarray, (width,height), interpolation=cv2.INTER_LINEAR)
 			self._contours = None
+
+	# Move the frame while keeping same width/height
+	def translate(self, x, y):
+		matrix = np.float32([[1,0,x],[0,1,y]])
+		self._ndarray = cv2.warpAffine(self._ndarray, matrix, (self.width,self.height))
+
+	# Rotate the frame while keeping same width/height
+	def rotate(self, deg):
+		matrix = cv2.getRotationMatrix2D((self.width/2,self.height/2), deg, 1)
+		self._ndarray = cv2.warpAffine(self._ndarray, matrix, (self.width,self.height))
 
 	# Blur this frame with a box filter
 	def blur(self, size):
