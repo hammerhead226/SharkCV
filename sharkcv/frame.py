@@ -121,6 +121,10 @@ class Frame(object):
 						continue
 				i += 1
 
+	# Sort contours by any sharkcv.Contour property
+	def contoursSort(self, prop, descending=True):
+		self._contours = sorted(self.contours, key=lambda c: getattr(c,prop), reverse=descending)
+
 	# Draw this frame's contours onto another frame
 	def contoursDraw(self, frame, **kwargs):
 		if 'color' not in kwargs:
