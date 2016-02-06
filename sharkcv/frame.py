@@ -176,3 +176,19 @@ class Frame(object):
 			kwargs['size'] = 3
 		kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
 		self._ndarray = cv2.morphologyEx(self._ndarray, cv2.MORPH_CLOSE, kernel)
+
+	# AND this frame with another frame
+	def bit_and(self, frame):
+		self._ndarray = cv2.bitwise_and(self._ndarray, frame._ndarray)
+
+	# OR this frame with another frame
+	def bit_or(self, frame):
+		self._ndarray = cv2.bitwise_or(self._ndarray, frame._ndarray)
+
+	# NOT this frame with another frame
+	def bit_not(self, frame):
+		self._ndarray = cv2.bitwise_not(self._ndarray, frame._ndarray)
+
+	# XOR this frame with another frame
+	def bit_xor(self, frame):
+		self._ndarray = cv2.bitwise_xor(self._ndarray, frame._ndarray)
