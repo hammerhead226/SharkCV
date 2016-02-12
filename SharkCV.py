@@ -139,10 +139,9 @@ while True:
 	# Open output video file
 	out = None
 	if args.output_video is not None:
-		if cap is not None:
-			logging.debug('Opening output video: %s', args.output_video)
-			fourcc = cv2.cv.CV_FOURCC(*'DIVX')
-			out = cv2.VideoWriter(time.strftime(args.output_video), fourcc, args.video_fps, (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
+		logging.debug('Opening output video: %s', args.output_video)
+		fourcc = cv2.cv.CV_FOURCC(*'DIVX')
+		out = cv2.VideoWriter(time.strftime(args.output_video), fourcc, args.video_fps, (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
 
 	# Set up FPS list and iterator
 	times = [0] * 25
