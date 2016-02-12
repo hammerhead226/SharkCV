@@ -103,50 +103,50 @@ else:
 logging.debug('Opening video')
 while True:
 	# Open input video and set options
-	cap = None
+	in_video = None
 	if args.input_image is None:
-		cap = cv2.VideoCapture(args.input_video)
-		if cap.isOpened():
+		in_video = cv2.VideoCapture(args.input_video)
+		if in_video.isOpened():
 			# Get FPS from video file
 			if type(args.input_video) is not int:
-				args.video_fps = cap.get(cv2.cv.CV_CAP_PROP_FPS)
+				args.video_fps = in_video.get(cv2.cv.CV_CAP_PROP_FPS)
 
 			# Set video options
 			if args.video_width is not None:
-				cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, args.video_width)
+				in_video.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, args.video_width)
 			if args.video_height is not None:
-				cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, args.video_height)
+				in_video.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, args.video_height)
 			if args.video_fps is not None:
-				cap.set(cv2.cv.CV_CAP_PROP_FPS, args.video_fps)
+				in_video.set(cv2.cv.CV_CAP_PROP_FPS, args.video_fps)
 
 			# Set webcam options
 			if type(args.input_video) is int:
 				if args.webcam_brightness is not None:
-					cap.set(cv2.cv.CV_CAP_PROP_BRIGHTNESS, args.webcam_brightness/255.0)
+					in_video.set(cv2.cv.CV_CAP_PROP_BRIGHTNESS, args.webcam_brightness/255.0)
 				if args.webcam_contrast is not None:
-					cap.set(cv2.cv.CV_CAP_PROP_CONTRAST, args.webcam_contrast/255.0)
+					in_video.set(cv2.cv.CV_CAP_PROP_CONTRAST, args.webcam_contrast/255.0)
 				if args.webcam_exposure is not None:
-					cap.set(cv2.cv.CV_CAP_PROP_EXPOSURE, args.webcam_exposure/255.0)
+					in_video.set(cv2.cv.CV_CAP_PROP_EXPOSURE, args.webcam_exposure/255.0)
 				if args.webcam_gain is not None:
-					cap.set(cv2.cv.CV_CAP_PROP_GAIN, args.webcam_gain/255.0)
+					in_video.set(cv2.cv.CV_CAP_PROP_GAIN, args.webcam_gain/255.0)
 				if args.webcam_hue is not None:
-					cap.set(cv2.cv.CV_CAP_PROP_HUE, args.webcam_hue/255.0)
+					in_video.set(cv2.cv.CV_CAP_PROP_HUE, args.webcam_hue/255.0)
 				if args.webcam_saturation is not None:
-					cap.set(cv2.cv.CV_CAP_PROP_SATURATION, args.webcam_saturation/255.0)
+					in_video.set(cv2.cv.CV_CAP_PROP_SATURATION, args.webcam_saturation/255.0)
 
-			logging.info('Opened video: %.fx%.f @ %.1f FPS', cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT), args.video_fps)
+			logging.info('Opened video: %.fx%.f @ %.1f FPS', in_video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), in_video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT), args.video_fps)
 
 	# Open output video file
-	out = None
+	out_video = None
 	if args.output_video is not None:
 		logging.debug('Opening output video: %s', args.output_video)
 		fourcc = cv2.cv.CV_FOURCC(*'DIVX')
-		out = cv2.VideoWriter(time.strftime(args.output_video), fourcc, args.video_fps, (int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
+		out_video = cv2.VideoWriter(time.strftime(args.output_video), fourcc, args.video_fps, (int(in_video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(in_video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
 
 	# Set up FPS list and iterator
 	times = [0] * 25
 	time_idx = 0
-	start = time.time()
+	time_start = time.time()
 
 	# Continually process frames
 	while True:
@@ -162,8 +162,8 @@ while True:
 			frame = sharkcv.Frame(cv2.imread(args.input_image, cv2.IMREAD_COLOR))
 
 		# Read input video
-		if cap is not None and cap.isOpened():
-			ret, frame = cap.read()
+		if in_video is not None and in_video.isOpened():
+			ret, frame = in_video.read()
 			if not ret:
 				if type(args.input_video) is int:
 					logging.warning('Failed to read webcam frame')
@@ -192,12 +192,12 @@ while True:
 				frame.writeImage(time.strftime(args.output_image))
 
 		# Write to output video
-		if out is not None:
+		if out_video is not None:
 			# Write to output video
 			if type(modret) is sharkcv.Frame:
-				modret.writeVideo(out)
+				modret.writeVideo(out_video)
 			elif type(frame) is sharkcv.Frame and type(args.input_video) is int:
-				frame.writeVideo(out)
+				frame.writeVideo(out_video)
 
 
 		# Break loop if only one frame to process
@@ -205,23 +205,23 @@ while True:
 			break
 
 		# Compute FPS information
-		end = time.time()
-		times[time_idx] = end - start
+		time_end = time.time()
+		times[time_idx] = time_end - time_start
 		time_idx += 1
 		if time_idx >= len(times):
 			logging.info('Average FPS: %.1f', 1/(sum(times)/len(times)))
 			time_idx = 0
 		if time_idx > 0 and time_idx % 5 == 0:
 			logging.debug('Average FPS: %.1f', 1/(sum(times)/len(times)))
-		start = end
+		time_start = time_end
 
 	# Release open output video
-	if out is not None:
-		out.release()
+	if out_video is not None:
+		out_video.release()
 
 	# Release open input video
-	if cap is not None:
-		cap.release()
+	if in_video is not None:
+		in_video.release()
 
 	# Break loop if using input image/video
 	if args.input_image is not None or not type(args.input_video) is int:
