@@ -136,12 +136,8 @@ while True:
 
 			logging.info('Opened video: %.fx%.f @ %.1f FPS', in_video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), in_video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT), args.video_fps)
 
-	# Open output video file
+	# Prep output video file
 	out_video = None
-	if args.output_video is not None:
-		logging.debug('Opening output video: %s', args.output_video)
-		fourcc = cv2.cv.CV_FOURCC(*'DIVX')
-		out_video = cv2.VideoWriter(time.strftime(args.output_video), fourcc, args.video_fps, (int(in_video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(in_video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
 
 	# Set up FPS list and iterator
 	times = [0] * 25
@@ -191,6 +187,11 @@ while True:
 			elif type(frame) is sharkcv.Frame and type(args.input_video) is int:
 				frame.writeImage(time.strftime(args.output_image))
 
+		# Open output video file (delayed so frame width/height is known)
+		if args.output_video is not None and out_video is None and type(modret) is sharkcv.Frame:
+			logging.debug('Opening output video: %s', args.output_video)
+			fourcc = cv2.cv.CV_FOURCC(*'DIVX')
+			out_video = cv2.VideoWriter(time.strftime(args.output_video), fourcc, args.video_fps, (int(frame.width), int(frame.height)))
 		# Write to output video
 		if out_video is not None:
 			# Write to output video
