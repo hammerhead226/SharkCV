@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import time
+import urllib2
 
 import cv2
 import numpy as np
@@ -16,11 +17,12 @@ import sharkcv
 parser = argparse.ArgumentParser(prog=__file__)
 group_input = parser.add_argument_group('input source')
 group_input = group_input.add_mutually_exclusive_group()
-group_input.add_argument('-ii', metavar='file', dest='input_image', help='input image')
 group_input.add_argument('-iv', metavar='N', dest='input_video', help='input video/webcam (default: -1)', default=-1)
+group_input.add_argument('-ii', metavar='file', dest='input_image', help='input image')
+group_input.add_argument('-im', metavar='url', dest='input_mjpg', help='input mjpg stream')
 group_output = parser.add_argument_group('output file(s)')
-group_output.add_argument('-oi', metavar='file', dest='output_image', help='output image')
 group_output.add_argument('-ov', metavar='file', dest='output_video', help='output video')
+group_output.add_argument('-oi', metavar='file', dest='output_image', help='output image')
 group_video = parser.add_argument_group('video options')
 group_video.add_argument('-vw', metavar='N', dest='video_width', help='video width', type=int)
 group_video.add_argument('-vh', metavar='N', dest='video_height', help='video height', type=int)
@@ -37,6 +39,8 @@ parser.add_argument('module', nargs='?', help='python module file')
 args = parser.parse_args()
 
 # Massage arguments
+if args.input_image is not None or args.input_mjpg is not None:
+	args.input_video = None
 if str(args.input_video).lstrip('-').isdigit():
 	args.input_video = int(args.input_video)
 
@@ -100,11 +104,11 @@ else:
 
 
 # Main image loop
-logging.debug('Opening video')
 while True:
 	# Open input video and set options
 	in_video = None
-	if args.input_image is None:
+	if args.input_video is not None:
+		logging.debug('Opening video: ' + str(args.input_video))
 		in_video = cv2.VideoCapture(args.input_video)
 		if in_video.isOpened():
 			# Get FPS from video file
@@ -136,6 +140,13 @@ while True:
 
 			logging.info('Opened video: %.fx%.f @ %.1f FPS', in_video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), in_video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT), args.video_fps)
 
+	# Open input mjpg stream
+	mjpg = None
+	mjpg_bytes = ''
+	if args.input_mjpg is not None:
+		logging.debug('Opening mjpg stream: ' + args.input_mjpg)
+		mjpg = urllib2.urlopen(args.input_mjpg)
+
 	# Prep output video file
 	out_video = None
 
@@ -149,14 +160,6 @@ while True:
 		# Get a frame to process
 		frame = None
 
-		# Read input image
-		if args.input_image is not None:
-			if not os.path.exists(args.input_image):
-				logging.error('Input image does not exist: %s', args.input_image)
-				sys.exit(1)
-			logging.debug('Reading image: %s', args.input_image)
-			frame = sharkcv.Frame(cv2.imread(args.input_image, cv2.IMREAD_COLOR))
-
 		# Read input video
 		if in_video is not None and in_video.isOpened():
 			ret, frame = in_video.read()
@@ -165,6 +168,26 @@ while True:
 					logging.warning('Failed to read webcam frame')
 				break
 			frame = sharkcv.Frame(frame)
+
+		# Read input image
+		if args.input_image is not None:
+			if not os.path.exists(args.input_image):
+				logging.error('Input image does not exist: %s', args.input_image)
+				sys.exit(1)
+			logging.debug('Reading image: %s', args.input_image)
+			frame = sharkcv.Frame(cv2.imread(args.input_image, cv2.IMREAD_COLOR))
+
+		# Read input mjpg stream
+		if mjpg is not None:
+			while True:
+				mjpg_bytes += mjpg.read(1024)
+				a = mjpg_bytes.find('\xff\xd8')
+				b = mjpg_bytes.find('\xff\xd9')
+				if a != -1 and b != -1:
+					jpg = mjpg_bytes[a:b+2]
+					mjpg_bytes = mjpg_bytes[b+2:]
+					frame = sharkcv.Frame(cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), cv2.CV_LOAD_IMAGE_COLOR))
+					break
 
 		if frame is None:
 			logging.warning('Failed to get a frame')
@@ -179,14 +202,6 @@ while True:
 			logging.error('Module exception: %s', str(e))
 			sys.exit(1)
 
-		# Write to output image
-		if args.output_image is not None:
-			logging.debug('Writing image: %s', args.output_image)
-			if type(modret) is sharkcv.Frame:
-				modret.writeImage(time.strftime(args.output_image))
-			elif type(frame) is sharkcv.Frame and type(args.input_video) is int:
-				frame.writeImage(time.strftime(args.output_image))
-
 		# Open output video file (delayed so frame width/height is known)
 		if args.output_video is not None and out_video is None and type(modret) is sharkcv.Frame:
 			logging.debug('Opening output video: %s', args.output_video)
@@ -199,6 +214,14 @@ while True:
 				modret.writeVideo(out_video)
 			elif type(frame) is sharkcv.Frame and type(args.input_video) is int:
 				frame.writeVideo(out_video)
+
+		# Write to output image
+		if args.output_image is not None:
+			logging.debug('Writing image: %s', args.output_image)
+			if type(modret) is sharkcv.Frame:
+				modret.writeImage(time.strftime(args.output_image))
+			elif type(frame) is sharkcv.Frame and type(args.input_video) is int:
+				frame.writeImage(time.strftime(args.output_image))
 
 
 		# Break loop if only one frame to process
