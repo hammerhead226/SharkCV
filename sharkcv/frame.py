@@ -63,30 +63,35 @@ class Frame(object):
 
 	# Move the frame while keeping same width/height
 	def translate(self, x, y):
-		matrix = np.float32([[1,0,x],[0,1,y]])
-		self._ndarray = cv2.warpAffine(self._ndarray, matrix, (self.width,self.height))
-		self._contours = None
+		if x != 0 or y != 0:
+			matrix = np.float32([[1,0,x],[0,1,y]])
+			self._ndarray = cv2.warpAffine(self._ndarray, matrix, (self.width,self.height))
+			self._contours = None
 
 	# Rotate the frame while keeping same width/height
 	def rotate(self, deg):
-		matrix = cv2.getRotationMatrix2D((self.width/2,self.height/2), deg, 1)
-		self._ndarray = cv2.warpAffine(self._ndarray, matrix, (self.width,self.height))
-		self._contours = None
+		if deg != 0:
+			matrix = cv2.getRotationMatrix2D((self.width/2,self.height/2), deg, 1)
+			self._ndarray = cv2.warpAffine(self._ndarray, matrix, (self.width,self.height))
+			self._contours = None
 
 	# Blur this frame with a box filter
 	def blur(self, size):
-		self._ndarray = cv2.blur(self._ndarray, (size,size))
-		self._contours = None
+		if size > 0:
+			self._ndarray = cv2.blur(self._ndarray, (size,size))
+			self._contours = None
 
 	# Blur this frame with a Gaussian kernel
 	def blurGaussian(self, size):
-		self._ndarray = cv2.GaussianBlur(self._ndarray, (size,size), 0)
-		self._contours = None
+		if size > 0:
+			self._ndarray = cv2.GaussianBlur(self._ndarray, (size,size), 0)
+			self._contours = None
 
 	# Blur this frame with a median filter
 	def blurMedian(self, size):
-		self._ndarray = cv2.medianBlur(self._ndarray, size)
-		self._contours = None
+		if size > 0:
+			self._ndarray = cv2.medianBlur(self._ndarray, size)
+			self._contours = None
 
 	# Write this frame to an image
 	def writeImage(self, filename):
@@ -150,9 +155,10 @@ class Frame(object):
 			kwargs['size'] = 3
 		if 'iterations' not in kwargs:
 			kwargs['iterations'] = 1
-		kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
-		self._ndarray = cv2.dilate(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
-		self._contours = None
+		if kwargs['size'] > 0 and kwargs['iterations'] > 0:
+			kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
+			self._ndarray = cv2.dilate(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
+			self._contours = None
 
 	# Erode this mask's white region
 	def erode(self, **kwargs):
@@ -162,9 +168,10 @@ class Frame(object):
 			kwargs['size'] = 3
 		if 'iterations' not in kwargs:
 			kwargs['iterations'] = 1
-		kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
-		self._ndarray = cv2.erode(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
-		self._contours = None
+		if kwargs['size'] > 0 and kwargs['iterations'] > 0:
+			kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
+			self._ndarray = cv2.erode(self._ndarray, kernel, kwargs['iterations'], borderType=cv2.BORDER_CONSTANT)
+			self._contours = None
 
 	# Erode/dilate this mask's white area
 	def open(self, **kwargs):
@@ -172,9 +179,10 @@ class Frame(object):
 			kwargs['shape'] = cv2.MORPH_ELLIPSE
 		if 'size' not in kwargs:
 			kwargs['size'] = 3
-		kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
-		self._ndarray = cv2.morphologyEx(self._ndarray, cv2.MORPH_OPEN, kernel)
-		self._contours = None
+		if kwargs['size'] > 0:
+			kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
+			self._ndarray = cv2.morphologyEx(self._ndarray, cv2.MORPH_OPEN, kernel)
+			self._contours = None
 
 	# Dilate/erode this mask's white area
 	def close(self, **kwargs):
@@ -182,9 +190,10 @@ class Frame(object):
 			kwargs['shape'] = cv2.MORPH_ELLIPSE
 		if 'size' not in kwargs:
 			kwargs['size'] = 3
-		kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
-		self._ndarray = cv2.morphologyEx(self._ndarray, cv2.MORPH_CLOSE, kernel)
-		self._contours = None
+		if kwargs['size'] > 0:
+			kernel = cv2.getStructuringElement(kwargs['shape'], (kwargs['size'],kwargs['size']))
+			self._ndarray = cv2.morphologyEx(self._ndarray, cv2.MORPH_CLOSE, kernel)
+			self._contours = None
 
 	# AND this frame with another frame
 	def bit_and(self, frame):
