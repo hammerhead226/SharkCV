@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+from datetime import datetime
 import logging
 import os
 import sys
@@ -18,7 +19,7 @@ parser = argparse.ArgumentParser(prog=__file__)
 group_input = parser.add_argument_group('input source')
 group_input = group_input.add_mutually_exclusive_group()
 group_input.add_argument('-iv', metavar='N', dest='input_video', help='input video/webcam (default: -1)', default=-1)
-group_input.add_argument('-ii', metavar='file', dest='input_image', help='input image')
+group_input.add_argument('-ii', metavar='file', nargs='+', dest='input_image', help='input image')
 group_input.add_argument('-im', metavar='url', dest='input_mjpg', help='input mjpg stream')
 group_output = parser.add_argument_group('output file(s)')
 group_output.add_argument('-ov', metavar='file', dest='output_video', help='output video')
@@ -39,7 +40,10 @@ parser.add_argument('module', nargs='?', help='python module file')
 args = parser.parse_args()
 
 # Massage arguments
-if args.input_image is not None or args.input_mjpg is not None:
+if type(args.input_image) is list and len(args.input_image) > 1 and args.module is None:
+	args.module = args.input_image[-1]
+	args.input_image = args.input_image[:-1]
+if type(args.input_image) is list or args.input_mjpg is not None:
 	args.input_video = None
 if str(args.input_video).lstrip('-').isdigit():
 	args.input_video = int(args.input_video)
@@ -140,6 +144,9 @@ while True:
 
 			logging.info('Opened video: %.fx%.f @ %.1f FPS', in_video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH), in_video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT), args.video_fps)
 
+	# Prep input image(s)
+	input_image_idx = 0
+
 	# Open input mjpg stream
 	mjpg = None
 	mjpg_bytes = ''
@@ -169,13 +176,14 @@ while True:
 				break
 			frame = sharkcv.Frame(frame)
 
-		# Read input image
-		if args.input_image is not None:
-			if not os.path.exists(args.input_image):
-				logging.error('Input image does not exist: %s', args.input_image)
+		# Read input image(s)
+		if type(args.input_image) is list:
+			if not os.path.exists(args.input_image[input_image_idx]):
+				logging.error('Input image does not exist: %s', args.input_image[input_image_idx])
 				sys.exit(1)
-			logging.debug('Reading image: %s', args.input_image)
-			frame = sharkcv.Frame(cv2.imread(args.input_image, cv2.IMREAD_COLOR))
+			logging.debug('Reading image: %s', args.input_image[input_image_idx])
+			frame = sharkcv.Frame(cv2.imread(args.input_image[input_image_idx], cv2.IMREAD_COLOR))
+			input_image_idx += 1
 
 		# Read input mjpg stream
 		if mjpg is not None:
@@ -204,9 +212,10 @@ while True:
 
 		# Open output video file (delayed so frame width/height is known)
 		if args.output_video is not None and out_video is None and type(modret) is sharkcv.Frame:
-			logging.debug('Opening output video: %s', args.output_video)
+			output_video = datetime.now().strftime(args.output_video)
+			logging.debug('Opening output video: %s', output_video)
 			fourcc = cv2.cv.CV_FOURCC(*'DIVX')
-			out_video = cv2.VideoWriter(time.strftime(args.output_video), fourcc, args.video_fps, (int(frame.width), int(frame.height)))
+			out_video = cv2.VideoWriter(output_video, fourcc, args.video_fps, (int(frame.width), int(frame.height)))
 		# Write to output video
 		if out_video is not None:
 			# Write to output video
@@ -217,15 +226,16 @@ while True:
 
 		# Write to output image
 		if args.output_image is not None:
-			logging.debug('Writing image: %s', args.output_image)
+			output_image = datetime.now().strftime(args.output_image)
+			logging.debug('Writing image: %s', output_image)
 			if type(modret) is sharkcv.Frame:
-				modret.writeImage(time.strftime(args.output_image))
+				modret.writeImage(output_image)
 			elif type(frame) is sharkcv.Frame and type(args.input_video) is int:
-				frame.writeImage(time.strftime(args.output_image))
+				frame.writeImage(output_image)
 
 
 		# Break loop if only one frame to process
-		if args.input_image is not None:
+		if type(args.input_image) is list and input_image_idx >= len(args.input_image):
 			break
 
 		# Compute FPS information
@@ -247,8 +257,8 @@ while True:
 	if in_video is not None:
 		in_video.release()
 
-	# Break loop if using input image/video
-	if args.input_image is not None or not type(args.input_video) is int:
+	# Break loop if using input image(s)/video
+	if type(args.input_image) is list or type(args.input_video) is not int:
 		break
 
 	time.sleep(0.05)
