@@ -40,6 +40,7 @@ Thanks to @taichichuan `mjpg-streamer` has been compiled for the roboRIO and it 
 python SharkCV.py -im [url] [module.py]
 ```
 - Video and webcam options will be ignored here, `mjpg-streamer input_uvc.so` must configured separately.
+- Be aware the 2016 FMS rules only allows UDP/TCP ports 1180 and 5800-5810 to be used for this.
 
 #### File Output
 `SharkCV` supports various output formats including images and videos.
