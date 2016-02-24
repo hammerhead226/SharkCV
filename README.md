@@ -10,6 +10,11 @@ sudo easy_install pip
 sudo pip install pynetworktables
 ```
 
+You may want to consider installing a mDNS client to interface with NetworkTables as well:
+```
+sudo apt-get install lbnss-mdns
+```
+
 
 ## Usage
 #### Command-Line Arguments
