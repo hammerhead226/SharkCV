@@ -137,11 +137,15 @@ class Frame(object):
 
 	# Draw this frame's contours onto another frame
 	def contoursDraw(self, frame, **kwargs):
+		if 'start' not in kwargs:
+			kwargs['start'] = 0
+		if 'end' not in kwargs:
+			kwargs['end'] = len(self.contours) - 1
 		if 'color' not in kwargs:
 			kwargs['color'] = (0,255,0)
 		if 'width' not in kwargs:
 			kwargs['width'] = 2
-		contours = [cnt._ndarray for cnt in self.contours]
+		contours = [cnt._ndarray for cnt in self.contours][kwargs['start']:kwargs['end']+1]
 		if len(contours) > 0:
 			cv2.drawContours(frame._ndarray, contours, -1, kwargs['color'], kwargs['width'])
 			return True
