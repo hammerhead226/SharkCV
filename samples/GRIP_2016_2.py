@@ -12,49 +12,48 @@ Including all OpenCV and NetworkTable processing this averages:
 '''
 
 import copy
+import logging
 
 from networktables import NetworkTable
-import logging
+
 logging.basicConfig(level=logging.DEBUG)
 NetworkTable.setIPAddress("127.0.0.1")
 NetworkTable.setClientMode()
 NetworkTable.initialize()
 cr = NetworkTable.getTable("SharkCV/myContoursReport")
 
-import cv2
-import numpy as np
 
 def GRIP_2016_2(frame):
-	# CV Resize
-	frame.resize(320, 240)
-	
-	orig = copy.deepcopy(frame)
+    # CV Resize
+    frame.resize(320, 240)
 
-	frame.colorHLS()
-	# HSL Threshold 1
-	mask = frame.threshold([85,144,44], [130,188,101])
-	# HSL Threshold 2
-	mask2 = frame.threshold([63,55,168], [96,161,255])
+    orig = copy.deepcopy(frame)
 
-	# Bitwise Or
-	mask.bit_or(mask2)
+    frame.color_hls()
+    # HSL Threshold 1
+    mask = frame.threshold([85, 144, 44], [130, 188, 101])
+    # HSL Threshold 2
+    mask2 = frame.threshold([63, 55, 168], [96, 161, 255])
 
-	# Dilate
-	mask.dilate(size=11, iterations=2)
+    # Bitwise Or
+    mask.bit_or(mask2)
 
-	# Find Contours (happens when contours are referenced)
+    # Dilate
+    mask.dilate(size=11, iterations=2)
 
-	# Filter Contours
-	mask.contoursFilter(area=(400,-1))
+    # Find Contours (happens when contours are referenced)
 
-	# Publish ContoursReport
-	for idx, cnt in enumerate(mask.contours):
-		table = cr.getSubTable(str(idx))
-		table.putValue('area', cnt.area)
-		table.putValue('width', cnt.width)
-		table.putValue('height', cnt.height)
-		table.putValue('centerX', cnt.centerX)
-		table.putValue('centerY', cnt.centerY)
+    # Filter Contours
+    mask.contours_filter(area=(400, -1))
 
-	mask.contoursDraw(orig)
-	return orig
+    # Publish ContoursReport
+    for idx, cnt in enumerate(mask.contours):
+        table = cr.getSubTable(str(idx))
+        table.putValue('area', cnt.area)
+        table.putValue('width', cnt.width)
+        table.putValue('height', cnt.height)
+        table.putValue('center_x', cnt.center_x)
+        table.putValue('center_y', cnt.center_y)
+
+    mask.contours_draw(orig)
+    return orig
