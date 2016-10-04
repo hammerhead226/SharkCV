@@ -1,10 +1,14 @@
 #!/usr/bin/env python2
 
 import argparse
+import BaseHTTPServer
+import copy
 from datetime import datetime
 import logging
 import os
+import SocketServer
 import sys
+import threading
 import time
 import urllib2
 
@@ -15,26 +19,30 @@ import sharkcv
 
 # Parse arguments
 parser = argparse.ArgumentParser(prog=__file__)
-group_input = parser.add_argument_group('input source')
+group_input = parser.add_argument_group('Input source')
 group_input = group_input.add_mutually_exclusive_group()
 group_input.add_argument('-iv', metavar='N', dest='input_video', help='input video/webcam (default: -1)', default=-1)
 group_input.add_argument('-ii', metavar='file', nargs='+', dest='input_image', help='input image')
 group_input.add_argument('-im', metavar='url', dest='input_mjpg', help='input mjpg stream')
-group_output = parser.add_argument_group('output file(s)')
-group_output.add_argument('-ov', metavar='file', dest='output_video', help='output video')
-group_output.add_argument('-oi', metavar='file', dest='output_image', help='output image')
-group_video = parser.add_argument_group('video options')
+group_video = parser.add_argument_group('Input video options')
 group_video.add_argument('-vw', metavar='N', dest='video_width', help='video width', type=int)
 group_video.add_argument('-vh', metavar='N', dest='video_height', help='video height', type=int)
 group_video.add_argument('-vf', metavar='N', dest='video_fps', help='video fps (webcam default: 30.0)', type=float,
                          default=30.0)
-group_webcam = parser.add_argument_group('webcam options')
+group_webcam = parser.add_argument_group('Webcam options')
 group_webcam.add_argument('-wb', metavar='[0-255]', dest='webcam_brightness', help='webcam brightness', type=float)
 group_webcam.add_argument('-wc', metavar='[0-255]', dest='webcam_contrast', help='webcam contrast', type=float)
 group_webcam.add_argument('-we', metavar='[0-255]', dest='webcam_exposure', help='webcam exposure', type=float)
 group_webcam.add_argument('-wg', metavar='[0-255]', dest='webcam_gain', help='webcam gain', type=float)
 group_webcam.add_argument('-wh', metavar='[0-255]', dest='webcam_hue', help='webcam hue', type=float)
 group_webcam.add_argument('-ws', metavar='[0-255]', dest='webcam_saturation', help='webcam saturation', type=float)
+group_output = parser.add_argument_group('Output file(s)')
+group_output.add_argument('-ov', metavar='file', dest='output_video', help='output video')
+group_output.add_argument('-oi', metavar='file', dest='output_image', help='output image')
+group_mjpg = parser.add_argument_group('Output MJPG stream')
+group_mjpg.add_argument('-oj', dest='mjpg', help='Enable MJPG stream', action='store_true', default=False)
+group_mjpg.add_argument('-jp', metavar='N', dest='mjpg_port', help='MJPG stream port (default: 5800)', type=int,
+                        default=5800)
 parser.add_argument('-v', dest='verbose_debug', help='logging level DEBUG', action='store_true', default=False)
 parser.add_argument('module', nargs='?', help='python module file')
 args = parser.parse_args()
@@ -142,10 +150,59 @@ while True:
             logging.info('Opened video: %.fx%.f @ %.1f FPS', in_video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH),
                          in_video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT), args.video_fps)
 
+    mjpg_server = None
+    if args.mjpg:
+        mjpg_frame = None
+
+        class ThreadedTCPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
+            pass
+
+        class Streamer(BaseHTTPServer.BaseHTTPRequestHandler):
+            # Silence BaseHTTPServer console output
+            def log_message(self, fmt, *args):
+                return
+
+            def do_GET(self):
+                logging.debug('GET: ' + self.path)
+
+                # Serve HTML page
+                if self.path == '/':
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    self.wfile.write('<html><head><title>'+os.path.splitext(__file__)[0]+'</title></head>')
+                    self.wfile.write('<body><img src="/stream.mjpg" style="width:100%;"/></body>')
+                    self.wfile.write('</html>')
+
+                # Serve MJPG stream
+                if self.path.endswith('.mjpg'):
+                    self.send_response(200)
+                    self.send_header('Content-type', 'multipart/x-mixed-replace; boundary=--jpgboundary')
+                    self.end_headers()
+                    while True:
+                        try:
+                            if mjpg_frame is not None:
+                                jpeg = mjpg_frame.jpeg()
+                                self.wfile.write('--jpgboundary\r\n')
+                                self.send_header('Content-type', 'image/jpeg')
+                                self.send_header('Content-length', str(len(jpeg)))
+                                self.end_headers()
+                                self.wfile.write(bytearray(jpeg))
+                                self.wfile.write('\r\n')
+                        except:
+                            pass
+                        time.sleep(1 / args.video_fps)
+
+        mjpg_server = ThreadedTCPServer(('', args.mjpg_port), Streamer)
+        mjpg_server.daemon_threads = True
+        mjpg_thread = threading.Thread(target=mjpg_server.serve_forever)
+        mjpg_thread.setDaemon(True)
+        mjpg_thread.start()
+
     # Prep input image(s)
     input_image_idx = 0
 
-    # Open input mjpg stream
+    # Open input MJPG stream
     mjpg = None
     mjpg_bytes = ''
     if args.input_mjpg is not None:
@@ -230,6 +287,11 @@ while True:
             elif type(frame) is sharkcv.Frame and type(args.input_video) is int:
                 frame.write_image(output_image)
 
+        # Copy for MJPG stream
+        if mjpg_server is not None:
+            mjpg_frame = copy.copy(frame)
+            mjpg_frame.color_bgr()
+
         # Break loop if only one frame to process
         if type(args.input_image) is list and input_image_idx >= len(args.input_image):
             break
@@ -244,6 +306,10 @@ while True:
         if time_idx > 0 and time_idx % 5 == 0:
             logging.debug('Average FPS: %.1f', 1 / (sum(times) / len(times)))
         time_start = time_end
+
+    # Release open MJPG stream
+    if mjpg_server is not None:
+        mjpg_server.shutdown()
 
     # Release open output video
     if out_video is not None:

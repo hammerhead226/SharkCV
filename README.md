@@ -22,38 +22,47 @@ To see a full list of command-line arguments run:
 ```
 $ python SharkCV.py -h
 ```
-There are arguments for various input file types, output file types, video input settings, and webcam settings.
+There are arguments for various input types, output types, video input settings, and webcam settings.
 
-#### Wired Webcam - Basic
-By default `SharkCV` will use the first webcam plugged in but you can specify it manually with an argument.
+#### Wired Webcam Input - Basic
 ```
 $ python SharkCV.py [module.py]
 ```
+- By default `SharkCV` will use the first webcam plugged in but you can specify it manually with an argument.
 - Root access is sometimes required for webcams at `/dev/video*`.
 
-#### Wired Webcam - Advanced
+#### Wired Webcam Input - Advanced
 Here is an example that sets some video and webcam options:
 ```
 $ python SharkCV.py -vw 320 -vh 240 -wb 0 -wh 127.5 [module.py]
 ```
 - FPS improves dramatically when resolution is reduced. Setting webcam resolution with arguments (when supported by device) will yield faster processing than resizing with `OpenCV`.
+- FPS can be greatly affected by webcam exposure time (and brightness if it affects the exposure).
 - Webcams frequently do not obey settings from `OpenCV`/`V4L` (`-w*` arguments).
 
-#### MJPG Stream
-Thanks to [Mike Anderson](https://github.com/taichichuan) `mjpg-streamer` has been compiled for the roboRIO and it is possible to stream the same webcam to both Smart Dashboard and `SharkCV`.
+#### MJPG Input Stream
+Thanks to [Mike Anderson](https://github.com/taichichuan) `mjpg-streamer` has been compiled for the roboRIO and it is possible to stream the same webcam to both Smart Dashboard and `SharkCV`. See below for MJPG output.
 ```
 $ python SharkCV.py -im [url] [module.py]
 ```
 - Video and webcam options will be ignored here, `mjpg-streamer input_uvc.so` must configured separately.
-- Be aware the 2016 FMS rules only allows UDP/TCP ports 1180 and 5800-5810 to be used for this.
+- Be mindful of the ports allowed by the FRC FMS when configuring `mjpg-streamer`.
 
 #### File Output
 `SharkCV` supports various output formats including images and videos.
 ```
+$ python SharkCV.py -oi image.png [module.py]
 $ python SharkCV.py -ov webcam.avi [module.py]
 ```
 - Output filenames are processed through `datetime.strftime()` so they support [% date notation](https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior).
 - File output is expensive and will cut your FPS significantly, especially on devices with poor throughput like the Raspberry Pi.
+
+#### MJPG Output Stream
+```
+$ python SharkCV.py -oj [module.py]
+```
+- Browsing to your device's IP in a browser will serve an HTML page with the MJPG stream.
+- HTTP server port is configurable but be mindful of the ports allowed by the FRC FMS.
 
 
 ## Module Construction

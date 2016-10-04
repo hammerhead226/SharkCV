@@ -113,6 +113,11 @@ class Frame(object):
     def write_video(self, video_writer):
         video_writer.write(self.ndarray)
 
+    # Return a JPEG of this frame
+    def jpeg(self):
+        _, buffer = cv2.imencode('.jpeg', self.ndarray)
+        return buffer
+
     # Build an array of contours
     @property
     def contours(self):
