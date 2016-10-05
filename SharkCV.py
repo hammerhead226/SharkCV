@@ -182,12 +182,11 @@ while True:
                     while True:
                         try:
                             if mjpg_frame is not None:
-                                jpeg = mjpg_frame.jpeg()
                                 self.wfile.write('--jpgboundary\r\n')
                                 self.send_header('Content-type', 'image/jpeg')
-                                self.send_header('Content-length', str(len(jpeg)))
+                                self.send_header('Content-length', str(len(mjpg_frame)))
                                 self.end_headers()
-                                self.wfile.write(bytearray(jpeg))
+                                self.wfile.write(bytearray(mjpg_frame))
                                 self.wfile.write('\r\n')
                         except:
                             pass
@@ -289,8 +288,9 @@ while True:
 
         # Copy for MJPG stream
         if mjpg_server is not None:
-            mjpg_frame = copy.deepcopy(frame)
+            mjpg_frame = copy.deepcopy(modret)
             mjpg_frame.color_bgr()
+            mjpg_frame = mjpg_frame.jpeg()
 
         # Break loop if only one frame to process
         if type(args.input_image) is list and input_image_idx >= len(args.input_image):
