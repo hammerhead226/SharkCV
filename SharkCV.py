@@ -289,7 +289,7 @@ while True:
 
         # Copy for MJPG stream
         if mjpg_server is not None:
-            mjpg_frame = copy.copy(frame)
+            mjpg_frame = copy.deepcopy(frame)
             mjpg_frame.color_bgr()
 
         # Break loop if only one frame to process
